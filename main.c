@@ -4,7 +4,9 @@
 #include <unistd.h>
 #include <math.h>
 
-struct threadArgs {
+#include "debug.h"
+
+typedef struct {
     double **values;
     int row;
     int col;
@@ -13,32 +15,7 @@ struct threadArgs {
     pthread_mutex_t *threadsSpawnedLock;
     int *valuesSolvedPoint;
     int *wereValuesModified;
-};
-
-// For debugging, remove after
-void print2dArray(int **array, int dimension)
-{
-    int row, col;
-
-    for (row = 0; row < dimension; row++) {
-        for (col = 0; col < dimension; col++) {
-            printf("%10d ", array[row][col]);
-        }
-        puts("");
-    }
-}
-
-void print2dDoubleArray(double **array, int dimension)
-{
-    int row, col;
-
-    for (row = 0; row < dimension; ++row) {
-        for (col = 0; col < dimension; ++col) {
-            printf("%10f ", array[row][col]);
-        }
-        puts("");
-    }
-}
+} ThreadArgs;
 
 int isEven(int value)
 {
@@ -196,7 +173,7 @@ void *updateValue(
 
 void *updateValueProxy(void *args)
 {
-    struct threadArgs *threadArgs = (struct threadArgs*) args;
+    ThreadArgs *threadArgs = (ThreadArgs*) args;
 
     return updateValue(
         threadArgs->values,
@@ -213,7 +190,6 @@ void *updateValueProxy(void *args)
 double** solve(double **values, int dimension, int threads, double precision)
 {
     int **valuesSolvedArray = createTwoDIntArray(dimension);
-
     resetSolvedArray(valuesSolvedArray, dimension);
 
     int threadsSpawned = 0;
@@ -250,15 +226,26 @@ double** solve(double **values, int dimension, int threads, double precision)
         // if isEven = 1 and oddPointsFlag = 0, spawn thread;
         // if isEven = 0 and oddPointsFlag = 1, spawn thread;
         if (!valuesSolvedArray[row][col]) {
-            struct threadArgs args;
-            args.values = values;
-            args.row = row;
-            args.col = col;
-            args.precision = precision;
-            args.threadsSpawned = &threadsSpawned;
-            args.threadsSpawnedLock = &threadsSpawnedLock;
-            args.valuesSolvedPoint = &valuesSolvedArray[row][col];
-            args.wereValuesModified = &wereValuesModified;
+            ThreadArgs args = {
+                .values = values,
+                .row = row,
+                .col = col,
+                .precision = precision,
+                .threadsSpawned = &threadsSpawned,
+                .threadsSpawnedLock = &threadsSpawnedLock,
+                .valuesSolvedPoint = &valuesSolvedArray[row][col],
+                .wereValuesModified = &wereValuesModified
+            };
+
+            // May need to do it this way, depends what Balena allows.
+            // args.values = values;
+            // args.row = row;
+            // args.col = col;
+            // args.precision = precision;
+            // args.threadsSpawned = &threadsSpawned;
+            // args.threadsSpawnedLock = &threadsSpawnedLock;
+            // args.valuesSolvedPoint = &valuesSolvedArray[row][col];
+            // args.wereValuesModified = &wereValuesModified;
 
             pthread_mutex_lock(&threadsSpawnedLock);
 
