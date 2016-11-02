@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-int **createTwoDIntArray(int dimension)
+int **createTwoDIntArray(const int dimension)
 {
     int **rows = (int **)malloc(dimension * sizeof(int*));
 
@@ -13,7 +13,7 @@ int **createTwoDIntArray(int dimension)
     return rows;
 }
 
-double **createTwoDDoubleArray(int dimension)
+double **createTwoDDoubleArray(const int dimension)
 {
     double **rows = (double **)malloc(dimension * sizeof(double*));
 
@@ -26,7 +26,11 @@ double **createTwoDDoubleArray(int dimension)
     return rows;
 }
 
-int twoDIntArrayContains(int value, int **array, int dimension)
+int twoDIntArrayContains(
+    const int value,
+    int ** const array,
+    const int dimension
+)
 {
     int row, col;
 
@@ -41,7 +45,7 @@ int twoDIntArrayContains(int value, int **array, int dimension)
     return 0;
 }
 
-void freeTwoDIntArray(int **array, int dimension)
+void freeTwoDIntArray(int **array, const int dimension)
 {
     int row;
 
@@ -52,7 +56,7 @@ void freeTwoDIntArray(int **array, int dimension)
     free(array);
 }
 
-void freeTwoDDoubleArray(double **array, int dimension)
+void freeTwoDDoubleArray(double **array, const int dimension)
 {
     int row;
 

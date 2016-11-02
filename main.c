@@ -17,12 +17,12 @@ typedef struct {
     int *wereValuesModified;
 } ThreadArgs;
 
-int isEven(int value)
+int isEven(const int value)
 {
     return value % 2 == 0;
 }
 
-void resetSolvedArray(int **solvedArray, int dimension)
+void resetSolvedArray(int ** const solvedArray, const int dimension)
 {
     int row, col;
 
@@ -40,7 +40,7 @@ void resetSolvedArray(int **solvedArray, int dimension)
     }
 }
 
-void moveToNext(int *row, int *col, int dimension)
+void moveToNext(int * const row, int * const col, const int dimension)
 {
     if (*col == dimension - 2) {
         *col = isEven(dimension) ? 1 : 2;
@@ -61,17 +61,17 @@ void moveToNext(int *row, int *col, int dimension)
     return;
 }
 
-int isLastEvenPoint(int row, int col, int dimension)
+int isLastEvenPoint(const int row, const int col, const int dimension)
 {
     return (row == dimension - 2) && (col == dimension - 2);
 }
 
-int isLastOddPoint(int row, int col, int dimension)
+int isLastOddPoint(const int row, const int col, const int dimension)
 {
     return (row == dimension - 2) && (col == dimension - 3);
 }
 
-void *endThread(int *threadsSpawned, pthread_mutex_t *threadsSpawnedLock)
+void *endThread(int * const threadsSpawned, pthread_mutex_t * const threadsSpawnedLock)
 {
     pthread_mutex_lock(threadsSpawnedLock);
     *threadsSpawned -= 1;
@@ -82,13 +82,13 @@ void *endThread(int *threadsSpawned, pthread_mutex_t *threadsSpawnedLock)
 
 void *updateValue(
     double **values,
-    int row,
-    int col,
-    double precision,
-    int *threadsSpawned,
-    pthread_mutex_t *threadsSpawnedLock,
-    int *valuesSolvedPoint,
-    int *wereValuesModified
+    const int row,
+    const int col,
+    const double precision,
+    int * const threadsSpawned,
+    pthread_mutex_t * const threadsSpawnedLock,
+    int * const valuesSolvedPoint,
+    int * const wereValuesModified
 )
 {
     double newValue = (values[row][col - 1] + values[row][col + 1]
@@ -122,9 +122,14 @@ void *updateValueProxy(void *args)
     );;
 }
 
-double** solve(double **values, int dimension, int threads, double precision)
+void solve(
+    double ** const values,
+    const int dimension,
+    const int threads,
+    const double precision
+)
 {
-    int **valuesSolvedArray = createTwoDIntArray(dimension);
+    int ** const valuesSolvedArray = createTwoDIntArray(dimension);
     resetSolvedArray(valuesSolvedArray, dimension);
 
     int threadsSpawned = 0;
@@ -156,10 +161,6 @@ double** solve(double **values, int dimension, int threads, double precision)
 
         // Second condition:
         // reverse version of XOR
-        // if isEven = 1 and oddPointsFlag = 1, continue;
-        // if isEven = 0 and oddPointsFlag = 0, continue;
-        // if isEven = 1 and oddPointsFlag = 0, spawn thread;
-        // if isEven = 0 and oddPointsFlag = 1, spawn thread;
         if (!valuesSolvedArray[row][col]) {
             ThreadArgs args = {
                 .values = values,
@@ -226,8 +227,6 @@ double** solve(double **values, int dimension, int threads, double precision)
     }
 
     freeTwoDIntArray(valuesSolvedArray, dimension);
-
-    return values;
 }
 
 void fillWithRandomValues(double **input, int dimension)
@@ -244,21 +243,27 @@ void fillWithRandomValues(double **input, int dimension)
 
 int main(int args, char *argv[])
 {
-    int dimension = 6;
+    // Input parameters
+    const int dimension = 8;
+    const int threads = 1;
+    const double precision = 0.1;
+    double ** const values = createTwoDDoubleArray(dimension);
+    // Generate random input array
+    fillWithRandomValues(values, dimension);
 
-    double **input = createTwoDDoubleArray(dimension);
-
-    fillWithRandomValues(input, dimension);
-
+    // Log input
     printf("Input:\n");
-    print2dDoubleArray(input, dimension);
+    print2dDoubleArray(values, dimension);
 
-    input = solve(input, dimension, 1, 0.1);
+    // Solve and update values
+    solve(values, dimension, threads, precision);
 
+    // Log solution
     printf("\nSolution:\n");
-    print2dDoubleArray(input, dimension);
+    print2dDoubleArray(values, dimension);
 
-    freeTwoDDoubleArray(input, dimension);
+    // Free memory
+    freeTwoDDoubleArray(values, dimension);
 
     return 0;
 }

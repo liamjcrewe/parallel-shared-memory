@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-void print2dArray(int **array, int dimension)
+void print2dArray(int ** const array, const int dimension)
 {
     int row, col;
 
@@ -12,7 +12,7 @@ void print2dArray(int **array, int dimension)
     }
 }
 
-void print2dDoubleArray(double **array, int dimension)
+void print2dDoubleArray(double ** const array, const int dimension)
 {
     int row, col;
 
