@@ -257,7 +257,6 @@ int main(int args, char *argv[])
 
     printf("\nSolution:\n");
     print2dDoubleArray(input, dimension);
-    puts("");
 
     freeTwoDDoubleArray(input, dimension);
 
