@@ -226,6 +226,8 @@ void solve(
         pthread_join(tIds[i], NULL);
     }
 
+    pthread_mutex_destroy(&threadsSpawnedLock);
+
     freeTwoDIntArray(valuesSolvedArray, dimension);
 }
 
