@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
-#include <string.h>
 
 struct threadArgs {
     double **values;
@@ -44,14 +43,6 @@ void print2dDoubleArray(double **array, int dimension)
 int isEven(int value)
 {
     return value % 2 == 0;
-}
-
-int *copyInt(int *intToCopy)
-{
-   int *copiedInt = malloc(sizeof(int));
-   memcpy(copiedInt, intToCopy, sizeof(int));
-
-   return copiedInt;
 }
 
 int **createTwoDIntArray(int dimension)
