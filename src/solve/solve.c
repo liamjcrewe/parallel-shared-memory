@@ -64,7 +64,10 @@ static int isLastOddPoint(const int row, const int col, const int dimension)
     return (row == dimension - 2) && (col == dimension - 3);
 }
 
-static void *endThread(int * const threadAvailableFlag, pthread_mutex_t * const threadAvailableFlagLock)
+static void *endThread(
+    int * const threadAvailableFlag,
+    pthread_mutex_t * const threadAvailableFlagLock
+)
 {
     pthread_mutex_lock(threadAvailableFlagLock);
     *threadAvailableFlag = 1;
