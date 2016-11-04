@@ -132,7 +132,6 @@ void solve(
     int ** const valuesSolvedArray = createTwoDIntArray(dimension);
     resetSolvedArray(valuesSolvedArray, dimension);
 
-
     // Array of available threads, initially all are available
     int threadsAvailable[threads];
     for (int i = 0; i < threads; i++) {
