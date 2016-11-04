@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "../array/array.h"
+#include "../utility/utility.h"
 
 typedef struct {
     double **values;
@@ -15,11 +16,6 @@ typedef struct {
     int *valuesSolvedPoint;
     int *wereValuesModified;
 } ThreadArgs;
-
-static int isEven(const int value)
-{
-    return value % 2 == 0;
-}
 
 static void resetSolvedArray(int ** const solvedArray, const int dimension)
 {
