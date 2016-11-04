@@ -28,6 +28,16 @@ const int isHelpFlag(int args, char *argv[])
     return 0;
 }
 
+/**
+ * Builds array of values based on the problemId given. Checks this is valid,
+ * runs solve on these values and writes the solution to file.
+ *
+ * @param  problemId ID of problem to solve
+ * @param  threads   Number of threads to use (upper bound)
+ * @param  precision Precision to work solution to
+ *
+ * @return           0 if success, -1 if error
+ */
 int runSolve(const int problemId, const int threads, const double precision)
 {
     const int dimension = getProblemDimension(problemId);
@@ -58,6 +68,14 @@ int runSolve(const int problemId, const int threads, const double precision)
     return 0;
 }
 
+/**
+ * Main function. Runs simple CLI tool that allows --help/-h, and reports an
+ * error if not enough/too many command line parameters are passed.
+ *
+ * @param  args Number of command line arguments
+ * @param  argv Array of command line arguments
+ * @return      0 if success, -1 if error.
+ */
 int main(int args, char *argv[])
 {
     if (isHelpFlag(args, argv)) {
