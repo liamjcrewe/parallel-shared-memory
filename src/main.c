@@ -271,32 +271,8 @@ const int isHelpOption(int args, char *argv[])
     return 0;
 }
 
-int main(int args, char *argv[])
+int runSolve(const int problemId, const int threads, const double precision)
 {
-    if (isHelpOption(args, argv)) {
-        printf(
-            "Argument order:\n"
-            " - Problem ID (1, 2, 3, 4 or 5. See src/problem/problem.c).\n"
-            " - Number of threads to use.\n"
-            " - Precision to work to.\n"
-        );
-
-        return 0;
-    }
-
-    if (args != 4) {
-        printf(
-            "You must specify problem ID, "
-            "number of threads and precision.\n"
-        );
-
-        return -1;
-    }
-
-    // Input parameters
-    const int problemId = atoi(argv[1]);
-    const int threads = atoi(argv[2]);
-    const double precision = atof(argv[3]);
     const int dimension = getProblemDimension(problemId);
 
     double ** const values = createTwoDDoubleArray(dimension);
@@ -323,4 +299,29 @@ int main(int args, char *argv[])
     freeTwoDDoubleArray(values, dimension);
 
     return 0;
+}
+
+int main(int args, char *argv[])
+{
+    if (isHelpOption(args, argv)) {
+        printf(
+            "Argument order:\n"
+            " - Problem ID (1, 2, 3, 4 or 5. See src/problem/problem.c).\n"
+            " - Number of threads to use.\n"
+            " - Precision to work to.\n"
+        );
+
+        return 0;
+    }
+
+    if (args != 4) {
+        printf(
+            "You must specify problem ID, "
+            "number of threads and precision.\n"
+        );
+
+        return -1;
+    }
+
+    return runSolve(atoi(argv[1]), atoi(argv[2]), atof(argv[3]));
 }
