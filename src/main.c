@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "debug.h"
-#include "arrays.h"
+#include "debug/debug.h"
+#include "arrays/arrays.h"
 
 typedef struct {
     double **values;
@@ -160,7 +160,8 @@ void solve(
     while (twoDIntArrayContains(0, valuesSolvedArray, dimension)) {
         wereValuesModified = 0;
 
-        /** Note: Acceptable race condition:
+        /**
+         *  Note: Acceptable race condition:
          *  --------------------------------
          *      If a thread is updating it's own ID in availableThreads to
          *      1 ('available'), this will miss this as it does not aquire the
@@ -173,7 +174,7 @@ void solve(
         tId = intArraySearch(1, threadsAvailable, threads);
 
         if (tId == -1) {
-            // busy loop, may be CPU hungry but will be faster
+            // busy wait, may be CPU hungry but will be faster
             continue;
         }
 
@@ -271,9 +272,9 @@ void fillWithRandomValues(double **input, int dimension)
 int main(int args, char *argv[])
 {
     // Input parameters
-    const int dimension = 8;
-    const int threads = 1;
-    const double precision = 0.1;
+    const int dimension = 10;
+    const int threads = 8;
+    const double precision = 0.2;
     double ** const values = createTwoDDoubleArray(dimension);
     // Generate random input array
     fillWithRandomValues(values, dimension);

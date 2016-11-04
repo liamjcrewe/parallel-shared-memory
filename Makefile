@@ -1,8 +1,8 @@
 all:
-	gcc main.c arrays.c debug.c -o solve
+	gcc src/main.c src/arrays/arrays.c src/debug/debug.c -o bin/solve
 balena:
-	gcc -std=c99 -pthread main.c arrays.c debug.c -o solve
+	gcc -std=c99 -pthread src/main.c src/arrays/arrays.c src/debug/debug.c -o bin/solve
 debug:
-	gcc -g -Wall main.c arrays.c debug.c -o solve
+	gcc -g -Wall src/main.c src/arrays/arrays.c src/debug/debug.c -o bin/solve
 clean:
-	rm solve
+	rm bin/solve
