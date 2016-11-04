@@ -7,6 +7,21 @@
 #include "problem/problem.h"
 #include "solve/solve.h"
 
+#define HELP "Argument order:\n"\
+             " - Problem ID (1, 2, 3, 4 or 5. See src/problem/problem.c).\n"\
+             " - Number of threads to use.\n"\
+             " - Precision to work to.\n"
+
+#define INVALID_NUM_ARGS "You must specify problem ID, "\
+                         "number of threads and precision.\n"
+
+#define INVALID_PROBLEM_ID "Invalid problem id given. "\
+                           "Must be 1, 2, 3, 4 or 5.\n"
+
+#define INVALID_THREADS "Threads must be an integer greater than 0\n"
+
+#define INVALID_PRECISION "Precision must be a decimal greater than 0\n"
+
 /**
  * Checks if any of the parameters passed via CLI are --help or -h
  *
@@ -46,7 +61,7 @@ int runSolve(const int problemId, const int threads, const double precision)
     const int result = fillProblemArray(values, problemId);
 
     if (result == -1) {
-        printf("Invalid problem id given. Must be 1, 2, 3, 4 or 5.\n");
+        printf(INVALID_PROBLEM_ID);
 
         return -1;
     }
@@ -79,24 +94,38 @@ int runSolve(const int problemId, const int threads, const double precision)
 int main(int args, char *argv[])
 {
     if (isHelpFlag(args, argv)) {
-        printf(
-            "Argument order:\n"
-            " - Problem ID (1, 2, 3, 4 or 5. See src/problem/problem.c).\n"
-            " - Number of threads to use.\n"
-            " - Precision to work to.\n"
-        );
+        printf(HELP);
 
         return 0;
     }
 
     if (args != 4) {
-        printf(
-            "You must specify problem ID, "
-            "number of threads and precision.\n"
-        );
+        printf(INVALID_NUM_ARGS);
 
         return -1;
     }
 
-    return runSolve(atoi(argv[1]), atoi(argv[2]), atof(argv[3]));
+    const int problemId = atoi(argv[1]);
+    const int threads = atoi(argv[2]);
+    const double precision = atof(argv[3]);
+
+    if (problemId <= 0) {
+        printf(INVALID_PROBLEM_ID);
+
+        return -1;
+    }
+
+    if (threads <= 0) {
+        printf(INVALID_THREADS);
+
+        return -1;
+    }
+
+    if (precision <= 0) {
+        printf(INVALID_PRECISION);
+
+        return -1;
+    }
+
+    return runSolve(problemId, threads, precision);
 }
