@@ -6,6 +6,9 @@
  *   3: 9 x 9
  *   4: 10 x 10
  *   5: 40 x 40
+ *
+ * It also defines functions to take a two dimensional array and fill it with
+ * one of these problems.
  */
 
 #define PROBLEM_1_DIMENSION 4
@@ -129,7 +132,7 @@ static double getProblemPoint(problemId, row, col)
         case 5:
             return problem5[row][col];
         default:
-            return (double) -1;
+            return -1;
     }
 }
 
