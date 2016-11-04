@@ -24,10 +24,8 @@ int isEven(const int value)
 
 void resetSolvedArray(int ** const solvedArray, const int dimension)
 {
-    int row, col;
-
-    for(row = 0; row < dimension; row++) {
-        for(col = 0; col < dimension; col++) {
+    for(int row = 0; row < dimension; row++) {
+        for(int col = 0; col < dimension; col++) {
             if (row == 0 || row == dimension - 1
                 || col == 0 || col == dimension - 1
             ) {

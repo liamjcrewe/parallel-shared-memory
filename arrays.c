@@ -4,9 +4,7 @@ int **createTwoDIntArray(const int dimension)
 {
     int **rows = (int **)malloc(dimension * sizeof(int*));
 
-    int row;
-
-    for (row = 0; row < dimension; row++) {
+    for (int row = 0; row < dimension; row++) {
         rows[row] = (int *)malloc(dimension * sizeof(int));
     }
 
@@ -17,9 +15,7 @@ double **createTwoDDoubleArray(const int dimension)
 {
     double **rows = (double **)malloc(dimension * sizeof(double*));
 
-    int row;
-
-    for (row = 0; row < dimension; row++) {
+    for (int row = 0; row < dimension; row++) {
         rows[row] = (double *)malloc(dimension * sizeof(double));
     }
 
@@ -32,10 +28,8 @@ int twoDIntArrayContains(
     const int dimension
 )
 {
-    int row, col;
-
-    for(row = 0; row < dimension; row++) {
-        for(col = 0; col < dimension; col++) {
+    for(int row = 0; row < dimension; row++) {
+        for(int col = 0; col < dimension; col++) {
             if (array[row][col] == value) {
                 return 1;
             }
@@ -47,9 +41,7 @@ int twoDIntArrayContains(
 
 void freeTwoDIntArray(int **array, const int dimension)
 {
-    int row;
-
-    for(row = 0; row < dimension; row++) {
+    for(int row = 0; row < dimension; row++) {
         free(array[row]);
     }
 
@@ -58,9 +50,7 @@ void freeTwoDIntArray(int **array, const int dimension)
 
 void freeTwoDDoubleArray(double **array, const int dimension)
 {
-    int row;
-
-    for(row = 0; row < dimension; row++) {
+    for(int row = 0; row < dimension; row++) {
         free(array[row]);
     }
 
@@ -69,9 +59,7 @@ void freeTwoDDoubleArray(double **array, const int dimension)
 
 int intArraySearch(const int value, int * const array, const int dimension)
 {
-    int i;
-
-    for (i = 0; i < dimension; i++) {
+    for (int i = 0; i < dimension; i++) {
         if (value == array[i]) {
             return i;
         }
