@@ -258,23 +258,6 @@ void solve(
     freeTwoDIntArray(valuesSolvedArray, dimension);
 }
 
-void fillWithRandomValues(double **input, int dimension)
-{
-    int row, col;
-    srand(time(NULL));
-
-    double x;
-    double max = 100;
-    double div = (double)RAND_MAX / max;
-
-    for (row = 0; row < dimension; row++) {
-        for (col = 0; col < dimension; col++) {
-            x = ((double)rand()/div);
-            input[row][col] = x;
-        }
-    }
-}
-
 const int isHelpOption(int args, char *argv[])
 {
     for (int i = 0; i < args; i++) {
