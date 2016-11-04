@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #include "debug/debug.h"
-#include "arrays/arrays.h"
+#include "array/array.h"
+#include "problem/problem.h"
 
 typedef struct {
     double **values;
@@ -129,7 +131,6 @@ void solve(
 {
     int ** const valuesSolvedArray = createTwoDIntArray(dimension);
     resetSolvedArray(valuesSolvedArray, dimension);
-
 
     // Array of available threads, initially all are available
     int threadsAvailable[threads];
@@ -262,22 +263,67 @@ void fillWithRandomValues(double **input, int dimension)
     int row, col;
     srand(time(NULL));
 
+    double x;
+    double max = 100;
+    double div = (double)RAND_MAX / max;
+
     for (row = 0; row < dimension; row++) {
         for (col = 0; col < dimension; col++) {
-            input[row][col] = rand() % 10;
+            x = ((double)rand()/div);
+            input[row][col] = x;
         }
     }
 }
 
+const int isHelpOption(int args, char *argv[])
+{
+    for (int i = 0; i < args; i++) {
+        if (strcmp(argv[i], "--help") == 0
+            || strcmp(argv[i], "-h") == 0) {
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 int main(int args, char *argv[])
 {
+    if (isHelpOption(args, argv)) {
+        printf(
+            "Argument order:\n"
+            " - Problem ID (1, 2, 3, 4 or 5. See src/problem/problem.c).\n"
+            " - Number of threads to use.\n"
+            " - Precision to work to.\n"
+        );
+
+        return 0;
+    }
+
+    if (args != 4) {
+        printf(
+            "You must specify problem ID, "
+            "number of threads and precision.\n"
+        );
+
+        return -1;
+    }
+
     // Input parameters
-    const int dimension = 10;
-    const int threads = 8;
-    const double precision = 0.2;
+    const int problemId = atoi(argv[1]);
+    const int threads = atoi(argv[2]);
+    const double precision = atof(argv[3]);
+    const int dimension = getProblemDimension(problemId);
+
     double ** const values = createTwoDDoubleArray(dimension);
-    // Generate random input array
-    fillWithRandomValues(values, dimension);
+    const int result = fillProblemArray(values, problemId);
+
+    if (result == -1) {
+        printf("Invalid problem id given. Must be 1, 2, 3, 4 or 5.\n");
+
+        return -1;
+    }
 
     // Log input
     printf("Input:\n");
