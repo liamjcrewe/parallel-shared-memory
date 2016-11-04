@@ -66,3 +66,16 @@ void freeTwoDDoubleArray(double **array, const int dimension)
 
     free(array);
 }
+
+int intArraySearch(const int value, int * const array, const int dimension)
+{
+    int i;
+
+    for (i = 0; i < dimension; i++) {
+        if (value == array[i]) {
+            return i;
+        }
+    }
+
+    return -1;
+}

@@ -7,3 +7,4 @@ int twoDIntArrayContains(
 );
 void freeTwoDIntArray(int **array, const int dimension);
 void freeTwoDDoubleArray(double **array, const int dimension);
+int intArraySearch(const int value, int * const array, const int dimension);

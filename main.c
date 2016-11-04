@@ -11,8 +11,8 @@ typedef struct {
     int row;
     int col;
     double precision;
-    int *threadsSpawned;
-    pthread_mutex_t *threadsSpawnedLock;
+    int *threadAvailableFlag;
+    pthread_mutex_t *threadAvailableFlagLock;
     int *valuesSolvedPoint;
     int *wereValuesModified;
 } ThreadArgs;
@@ -71,11 +71,11 @@ int isLastOddPoint(const int row, const int col, const int dimension)
     return (row == dimension - 2) && (col == dimension - 3);
 }
 
-void *endThread(int * const threadsSpawned, pthread_mutex_t * const threadsSpawnedLock)
+void *endThread(int * const threadAvailableFlag, pthread_mutex_t * const threadAvailableFlagLock)
 {
-    pthread_mutex_lock(threadsSpawnedLock);
-    *threadsSpawned -= 1;
-    pthread_mutex_unlock(threadsSpawnedLock);
+    pthread_mutex_lock(threadAvailableFlagLock);
+    *threadAvailableFlag = 1;
+    pthread_mutex_unlock(threadAvailableFlagLock);
 
     return NULL;
 }
@@ -85,8 +85,8 @@ void *updateValue(
     const int row,
     const int col,
     const double precision,
-    int * const threadsSpawned,
-    pthread_mutex_t * const threadsSpawnedLock,
+    int * const threadAvailableFlag,
+    pthread_mutex_t * const threadAvailableFlagLock,
     int * const valuesSolvedPoint,
     int * const wereValuesModified
 )
@@ -97,13 +97,13 @@ void *updateValue(
     if (fabs(newValue - values[row][col]) < precision) {
         *valuesSolvedPoint = 1;
 
-        return endThread(threadsSpawned, threadsSpawnedLock);
+        return endThread(threadAvailableFlag, threadAvailableFlagLock);
     }
 
     *wereValuesModified = 1;
     values[row][col] = newValue;
 
-    return endThread(threadsSpawned, threadsSpawnedLock);
+    return endThread(threadAvailableFlag, threadAvailableFlagLock);
 }
 
 void *updateValueProxy(void *args)
@@ -115,8 +115,8 @@ void *updateValueProxy(void *args)
         threadArgs->row,
         threadArgs->col,
         threadArgs->precision,
-        threadArgs->threadsSpawned,
-        threadArgs->threadsSpawnedLock,
+        threadArgs->threadAvailableFlag,
+        threadArgs->threadAvailableFlagLock,
         threadArgs->valuesSolvedPoint,
         threadArgs->wereValuesModified
     );;
@@ -132,12 +132,22 @@ void solve(
     int ** const valuesSolvedArray = createTwoDIntArray(dimension);
     resetSolvedArray(valuesSolvedArray, dimension);
 
-    int threadsSpawned = 0;
-    pthread_mutex_t threadsSpawnedLock;
-    pthread_mutex_init(&threadsSpawnedLock, NULL);
 
+    // Array of available threads, initially all are available
+    int threadsAvailable[threads];
+    for (int i = 0; i < threads; i++) {
+        threadsAvailable[i] = 1;
+    }
+
+    // Array of locks on available threads
+    pthread_mutex_t threadsAvailableLocks[threads];
+    for (int i = 0; i < threads; i++) {
+        pthread_mutex_init(&threadsAvailableLocks[i], NULL);
+    }
+
+    // Keep track of threads to join them later
     pthread_t tIds[threads];
-    int tId = 0;
+    int tId;
 
     int row = 1;
     int col = 1;
@@ -152,10 +162,23 @@ void solve(
     while (twoDIntArrayContains(0, valuesSolvedArray, dimension)) {
         wereValuesModified = 0;
 
-        if (threadsSpawned == threads) {
+        /** Note: Acceptable race condition:
+         *  --------------------------------
+         *      If a thread is updating it's own ID in availableThreads to
+         *      1 ('available'), this will miss this as it does not aquire the
+         *      lock. However, this will simply loop and try again rather than
+         *      have the overhead of the lock.
+         *      The reverse will not happen, as setting the id in
+         *      availableThreads to 0 ('unavailable') is done sequentially in
+         *      this process.
+         */
+        tId = intArraySearch(1, threadsAvailable, threads);
+
+        if (tId == -1) {
             // busy loop, may be CPU hungry but will be faster
             continue;
         }
+
 
         rowColSum = row + col;
 
@@ -167,30 +190,29 @@ void solve(
                 .row = row,
                 .col = col,
                 .precision = precision,
-                .threadsSpawned = &threadsSpawned,
-                .threadsSpawnedLock = &threadsSpawnedLock,
+                .threadAvailableFlag = &threadsAvailable[tId],
+                .threadAvailableFlagLock = &threadsAvailableLocks[tId],
                 .valuesSolvedPoint = &valuesSolvedArray[row][col],
                 .wereValuesModified = &wereValuesModified
             };
-
             // May need to do it this way, depends what Balena allows.
             // args.values = values;
             // args.row = row;
             // args.col = col;
             // args.precision = precision;
-            // args.threadsSpawned = &threadsSpawned;
-            // args.threadsSpawnedLock = &threadsSpawnedLock;
+            // args.threadsAvailableFlag = &threadsAvailable[tId];
+            // args.threadsAvailableFlagLock = &threadsAvailableLocks[tId];
             // args.valuesSolvedPoint = &valuesSolvedArray[row][col];
             // args.wereValuesModified = &wereValuesModified;
 
-            pthread_mutex_lock(&threadsSpawnedLock);
+            pthread_mutex_lock(&threadsAvailableLocks[tId]);
 
+            // create the thread
             pthread_create(&tIds[tId], NULL, updateValueProxy, &args);
+            // set lock to unavailable
+            threadsAvailable[tId] = 0;
 
-            threadsSpawned++;
-            pthread_mutex_unlock(&threadsSpawnedLock);
-
-            tId++;
+            pthread_mutex_unlock(&threadsAvailableLocks[tId]);
         }
 
         if (wereValuesModified) {
@@ -202,10 +224,12 @@ void solve(
         ) {
             oddPointsFlag = oddPointsFlag ? 0 : 1;
 
-            int i;
+            // Wait for all live threads to finish
+            for (int i = 0; i < threads; i++) {
+                if (!threadsAvailable[i]) {
+                    continue;
+                }
 
-            // Wait for threads to finish
-            for (i = 0; i < threadsSpawned; i++) {
                 pthread_join(tIds[i], NULL);
             }
 
@@ -218,15 +242,18 @@ void solve(
         moveToNext(&row, &col, dimension);
     }
 
-    int i;
+    // Make sure we wait for threads to finish
+    for (int i = 0; i < threads; i++) {
+        // Destroy all locks while we are here
+        pthread_mutex_destroy(&threadsAvailableLocks[i]);
 
-    // Maks sure we wait for threads to finish
-    for (i = 0; i < threadsSpawned; i++) {
+        if (!threadsAvailable[i]) {
+            continue;
+        }
+
         printf("Rogue thread found");
         pthread_join(tIds[i], NULL);
     }
-
-    pthread_mutex_destroy(&threadsSpawnedLock);
 
     freeTwoDIntArray(valuesSolvedArray, dimension);
 }
