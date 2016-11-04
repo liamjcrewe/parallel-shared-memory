@@ -6,6 +6,9 @@
  *   3: 9 x 9
  *   4: 10 x 10
  *   5: 40 x 40
+ *
+ * It also defines functions to take a two dimensional array and fill it with
+ * one of these problems.
  */
 
 #define PROBLEM_1_DIMENSION 4
@@ -97,6 +100,48 @@ static const double problem5[PROBLEM_5_DIMENSION][PROBLEM_5_DIMENSION] = {
     {17.126822, 50.488979, 68.272743, 59.999988, 19.802619, 22.616983, 23.633774, 12.843673, 63.610272, 97.849321, 53.534779, 59.031841, 48.144645, 67.045164, 28.077606, 0.319096, 63.053971, 48.091372, 71.697564, 20.961124, 93.612534, 45.851744, 30.257288, 34.238770, 51.003724, 19.592194, 86.009067, 54.391603, 59.671021, 90.856229, 20.645455, 88.163771, 68.496220, 15.973208, 61.708655, 37.365439, 0.935500, 22.944964, 36.014871, 1.932817}
 };
 
+/**
+ * Get a value at a given row and column for a given problem. Note it is the
+ * responsibility of the caller to ensure the row and col exists for that
+ * specific problem. This will not be checked here.
+ *
+ * @param  problemId The ID of the problem
+ * @param  row       The row of the desire value
+ * @param  col       The column of the desire value
+ *
+ * @return           The value of the point at the given row and column, or -1
+ *                   if no problem exists for the given problemId
+ */
+static const double getProblemPoint(
+    const int problemId,
+    const int row,
+    const int col
+)
+{
+    switch (problemId) {
+        case 1:
+            return problem1[row][col];
+        case 2:
+            return problem2[row][col];
+        case 3:
+            return problem3[row][col];
+        case 4:
+            return problem4[row][col];
+        case 5:
+            return problem5[row][col];
+        default:
+            return -1;
+    }
+}
+
+/**
+ * Get the dimension of the specified problem
+ *
+ * @param  problemId The ID of the problem
+ *
+ * @return           The integer dimension of the specified problem, or
+ *                   -1 if no problem exists for the given problemId
+ */
 const int getProblemDimension(const int problemId)
 {
     switch (problemId) {
@@ -115,24 +160,14 @@ const int getProblemDimension(const int problemId)
     }
 }
 
-static double getProblemPoint(problemId, row, col)
-{
-    switch (problemId) {
-        case 1:
-            return problem1[row][col];
-        case 2:
-            return problem2[row][col];
-        case 3:
-            return problem3[row][col];
-        case 4:
-            return problem4[row][col];
-        case 5:
-            return problem5[row][col];
-        default:
-            return (double) -1;
-    }
-}
-
+/**
+ * Fill the given two dimensional array with the values of the specified problem
+ *
+ * @param  values    The array to fill
+ * @param  problemId The ID of the problem to copy into values
+ *
+ * @return           0 if success, -1 if error
+ */
 const int fillProblemArray(double ** const values, const int problemId)
 {
     const int dimension = getProblemDimension(problemId);

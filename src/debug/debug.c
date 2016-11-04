@@ -1,15 +1,11 @@
 #include <stdio.h>
 
-void print2dArray(int ** const array, const int dimension)
-{
-    for (int row = 0; row < dimension; row++) {
-        for (int col = 0; col < dimension; col++) {
-            printf("%10d ", array[row][col]);
-        }
-        puts("");
-    }
-}
-
+/**
+ * Print a two dimensional array of doubles to the screen.
+ *
+ * @param array     The array to print
+ * @param dimension The dimension of the array to print
+ */
 void print2dDoubleArray(double ** const array, const int dimension)
 {
     for (int row = 0; row < dimension; ++row) {
