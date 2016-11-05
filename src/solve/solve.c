@@ -238,7 +238,6 @@ void solve(
             continue;
         }
 
-        printf("Rogue thread found");
         pthread_join(tIds[i], NULL);
     }
 
