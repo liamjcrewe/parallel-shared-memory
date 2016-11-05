@@ -14,9 +14,9 @@
  *   X X X X X          X O E O E X
  *                      X X X X X X
  *
- * where E = point where row and column indices add to an even value,
- *       O = point where row and column indicies add to an odd value,
- *       X = edge value i.e. is a fixed point.
+ * where E = 'even' point - where row and column indices add to an even value,
+ *       O = 'odd' point - where row and column indicies add to an odd value,
+ *       X = 'edge' point - a fixed point.
  *
  * Using this view it is clear that all Es can be worked on in parallel, and
  * likewise for all Os. This is the basis of the parallel algorithm; work on as
