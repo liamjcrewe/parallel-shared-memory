@@ -191,15 +191,6 @@ void solve(
                 .valuesSolvedPoint = &valuesSolvedArray[row][col],
                 .wereValuesModified = &wereValuesModified
             };
-            // May need to do it this way, depends what Balena allows.
-            // args.values = values;
-            // args.row = row;
-            // args.col = col;
-            // args.precision = precision;
-            // args.threadsAvailableFlag = &threadsAvailable[tId];
-            // args.threadsAvailableFlagLock = &threadsAvailableLocks[tId];
-            // args.valuesSolvedPoint = &valuesSolvedArray[row][col];
-            // args.wereValuesModified = &wereValuesModified;
 
             pthread_mutex_lock(&threadsAvailableLocks[tId]);
 
