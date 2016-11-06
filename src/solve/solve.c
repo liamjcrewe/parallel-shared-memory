@@ -217,7 +217,7 @@ static void *updateValueProxy(void *args)
         threadArgs->threadAvailableFlagLock,
         threadArgs->valuesSolvedPoint,
         threadArgs->wereValuesModified
-    );;
+    );
 }
 
 void solve(
