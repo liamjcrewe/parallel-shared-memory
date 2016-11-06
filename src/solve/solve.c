@@ -166,6 +166,18 @@ static int isLastOddPoint(const int row, const int col, const int dimension)
     return (row == dimension - 2) && (col == dimension - 3);
 }
 
+/**
+ * Runs processes required to end a thread. Updates the flag given to signal
+ * that the current thread id has finished and is now (or about to be)
+ * available to be used for a new thread. Gains and releases a lock as this
+ * flag is updated elsewhere to be 0, so locks must be used for concurrency.
+ *
+ *
+ * @param  threadAvailableFlag     The flag to update
+ * @param  threadAvailableFlagLock The lock on the flag to update
+ *
+ * @return                         NULL
+ */
 static void *endThread(
     int * const threadAvailableFlag,
     pthread_mutex_t * const threadAvailableFlagLock
@@ -178,6 +190,30 @@ static void *endThread(
     return NULL;
 }
 
+/**
+ * Main callback function for each parallel thread. Updates a specific value
+ * to the average of its four neighbours if it changes by more than the given
+ * precision. If this happens, it updates a flag (wereValuesModified) to signal
+ * that it updated a value. If the value changes by less than the precision, we
+ * can (for now) view it as solved, and therefore update the valuesSolvedPoint
+ * to 1.
+ *
+ * @param  values                  The two dimensional array of values being
+ *                                 solved
+ * @param  row                     The row of the point to update
+ * @param  col                     The column of the point to update
+ * @param  precision               The precision to compare the change against
+ * @param  threadAvailableFlag     The flag to update when thread has finished
+ * @param  threadAvailableFlagLock The lock on the flag to update when thread
+ *                                 has finished
+ * @param  valuesSolvedPoint       The flag to update to signal if the current
+ *                                 point is solved
+ * @param  wereValuesModified      The flag to update to signal if the value
+ *                                 changed by more than the precision and hence
+ *                                 was updated
+ *
+ * @return                         NULL
+ */
 static void *updateValue(
     double ** const values,
     const int row,
@@ -192,6 +228,7 @@ static void *updateValue(
     double newValue = (values[row][col - 1] + values[row][col + 1]
                         + values[row - 1][col] + values[row + 1][col]) / 4;
 
+    // fabs - absolute value i.e. difference
     if (fabs(newValue - values[row][col]) < precision) {
         *valuesSolvedPoint = 1;
 
@@ -204,6 +241,17 @@ static void *updateValue(
     return endThread(threadAvailableFlag, threadAvailableFlagLock);
 }
 
+/**
+ * Proxy to updateValue for code readbility. The callback to pthread_create can
+ * only be passed one parameter (of type void *). This is implemented by
+ * defining a struct with the required arguments, and so this simply pulls the
+ * required parameters out of this struct and passes it to updateValue.
+ * Allows type checking for error checking/debugging and for code readbility.
+ *
+ * @param  args Struct containing the required arguments for updateValue
+ *
+ * @return      NULL
+ */
 static void *updateValueProxy(void *args)
 {
     ThreadArgs *threadArgs = (ThreadArgs*) args;
