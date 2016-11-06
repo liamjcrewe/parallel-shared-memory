@@ -406,8 +406,8 @@ static void solveValues(
         // cannot do some 'E's and 'O's at the same time (see top of file
         // comment for info on what an 'E' and an 'O' is)
         for (int i = 0; i < threads; i++) {
-            // also a bug, shouldn't this not have the '!'?
-            if (!threadsAvailable[i]) {
+            // If thread is available, it's finished, so no need to wait
+            if (threadsAvailable[i]) {
                 continue;
             }
 
@@ -474,8 +474,8 @@ void solve(
         // Destroy all locks while we are here
         pthread_mutex_destroy(&threadsAvailableLocks[i]);
 
-        // also a bug, shouldn't this not have the '!'?
-        if (!threadsAvailable[i]) {
+        // If thread is available, it's finished, so no need to wait
+        if (threadsAvailable[i]) {
             continue;
         }
 
