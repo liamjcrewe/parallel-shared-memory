@@ -307,7 +307,7 @@ static void *updateValueProxy(void *args)
  * @return                   1 if valuesSolvedArray does not contain 0 (i.e
  *                           solution is 'solved'), 0 otherwise
  */
-int isSolved(int ** const valuesSolvedArray, const int dimension)
+static int isSolved(int ** const valuesSolvedArray, const int dimension)
 {
     return !twoDIntArrayContains(0, valuesSolvedArray, dimension);
 }
@@ -327,7 +327,7 @@ int isSolved(int ** const valuesSolvedArray, const int dimension)
  * @return                  1 if threadsAvailable does not contain 0 (i.e all
  *                          threads have finished), 0 otherwise
  */
-int allThreadsFinished(int * const threadsAvailable, const int threads)
+static int allThreadsFinished(int * const threadsAvailable, const int threads)
 {
     // intArraySearch returns -1 if it doesn't find given value
     return intArraySearch(0, threadsAvailable, threads) == -1;
