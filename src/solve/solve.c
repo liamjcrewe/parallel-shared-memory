@@ -4,7 +4,7 @@
  *
  * This file contains most of the complicated logic to solve the problem using
  * a parallel algorithm. It does, in places, sacrifice code readability for
- * speed and efficiency, hence this long comment. To give some background to
+ * speed and efficiency, hence the long comments. To give some background to
  * the algorithm, the input two dimensional array should be viewed as follows:
  *
  *   X X X X X          X X X X X X
@@ -15,7 +15,7 @@
  *                      X X X X X X
  *
  * where E = 'even' point - where row and column indices add to an even value,
- *       O = 'odd' point - where row and column indicies add to an odd value,
+ *       O = 'odd' point - where row and column indices add to an odd value,
  *       X = 'edge' point - a fixed point.
  *
  * Using this view it is clear that all Es can be worked on in parallel, and
@@ -37,18 +37,16 @@
 
 // struct to pass multiple arguments to thread callback function
 typedef struct {
-    double ** const values; // The two dimensional array of values being solved
-    const int row; // The row to update in the thread
-    const int col; // The column to update in the thread
-    const double precision; // The precision to work to
-    int * const threadAvailableFlag; // Flag - is a given thread available
-    pthread_mutex_t * const threadAvailableFlagLock; // Lock on availability
-                                                     // flag to restrict
-                                                     // concurrent access
-    int * const valuesSolvedPoint; // Flag - is the given point solved
-    int * const wereValuesModified; // Flag - was value updated (i.e new value
-                                    // calculated and changed by more than the
-                                    // precision)
+    double ** values; // The two dimensional array of values being solved
+    int row; // The row to update in the thread
+    int col; // The column to update in the thread
+    double precision; // The precision to work to
+    int * threadAvailableFlag; // Flag - is a given thread available
+    pthread_mutex_t * threadAvailableFlagLock; // Lock on availability flag to
+                                               // restrict concurrent access
+    int ** valuesSolvedArray; // Two dimensional array of flags that signal
+                              // which values have been solved
+    int valuesSolvedArrayDimension; // The dimension of valuesSolvedArray
 } ThreadArgs;
 
 /**
@@ -66,21 +64,21 @@ typedef struct {
  * full pass of the values array in solve has been done without any values
  * being updated.
  *
- * @param solvedArray The two dimensional array to set to the above style
+ * @param valuesSolvedArray The two dimensional array to set to the above style
  * @param dimension   The dimension of the two dimensional array given
  */
-static void resetSolvedArray(int ** const solvedArray, const int dimension)
+static void resetSolvedArray(int ** const valuesSolvedArray, const int dimension)
 {
     for(int row = 0; row < dimension; row++) {
         for(int col = 0; col < dimension; col++) {
             if (row == 0 || row == dimension - 1
                 || col == 0 || col == dimension - 1
             ) {
-                solvedArray[row][col] = 1;
+                valuesSolvedArray[row][col] = 1;
 
                 continue;
             }
-            solvedArray[row][col] = 0;
+            valuesSolvedArray[row][col] = 0;
         }
     }
 }
@@ -214,28 +212,29 @@ static void *endThread(
 }
 
 /**
- * Main callback function for each parallel thread. Updates a specific value
- * to the average of its four neighbours if it changes by more than the given
- * precision. If this happens, it updates a flag (wereValuesModified) to signal
- * that it updated a value. If the value changes by less than the precision, we
- * can (for now) view it as solved, and therefore update the valuesSolvedPoint
- * to 1.
+ * Main callback function for each parallel thread. Updates a specific value to
+ * the average of its four neighbours if it changes by more than the given
+ * precision. If this happens, it resets the valuesSolvedArray, as we cannot
+ * assume any pre calculated values are 'solved' if a value is updated. If the
+ * value changes by less than the precision, we can (for now) view it as
+ * solved, and therefore update the corresponding point in the
+ * valuesSolvedArray to 1.
  *
- * @param  values                  The two dimensional array of values being
- *                                 solved
- * @param  row                     The row of the point to update
- * @param  col                     The column of the point to update
- * @param  precision               The precision to compare the change against
- * @param  threadAvailableFlag     The flag to update when thread has finished
- * @param  threadAvailableFlagLock The lock on the flag to update when thread
- *                                 has finished
- * @param  valuesSolvedPoint       The flag to update to signal if the current
- *                                 point is solved
- * @param  wereValuesModified      The flag to update to signal if the value
- *                                 changed by more than the precision and hence
- *                                 was updated
+ * @param  values                     The two dimensional array of values being
+ *                                    solved
+ * @param  row                        The row of the point to update
+ * @param  col                        The column of the point to update
+ * @param  precision                  The precision to compare the change
+ *                                    against
+ * @param  threadAvailableFlag        The flag to update when thread has
+ *                                    finished
+ * @param  threadAvailableFlagLock    The lock on the flag to update when
+ *                                    thread has finished
+ * @param  valuesSolvedArray          Two dimensional array of flags that
+ *                                    signal which values have been solved
+ * @param  valuesSolvedArrayDimension The dimension of valuesSolvedArray
  *
- * @return                         NULL
+ * @return                            NULL
  */
 static void *updateValue(
     double ** const values,
@@ -244,8 +243,8 @@ static void *updateValue(
     const double precision,
     int * const threadAvailableFlag,
     pthread_mutex_t * const threadAvailableFlagLock,
-    int * const valuesSolvedPoint,
-    int * const wereValuesModified
+    int ** const valuesSolvedArray,
+    const int valuesSolvedArrayDimension
 )
 {
     double newValue = (values[row][col - 1] + values[row][col + 1]
@@ -253,13 +252,15 @@ static void *updateValue(
 
     // fabs - absolute value i.e. difference
     if (fabs(newValue - values[row][col]) < precision) {
-        *valuesSolvedPoint = 1;
+        valuesSolvedArray[row][col] = 1;
 
         return endThread(threadAvailableFlag, threadAvailableFlagLock);
     }
 
-    *wereValuesModified = 1;
     values[row][col] = newValue;
+
+    // We've changed a value so must assume all values are unsolved and recheck
+    resetSolvedArray(valuesSolvedArray, valuesSolvedArrayDimension);
 
     return endThread(threadAvailableFlag, threadAvailableFlagLock);
 }
@@ -277,145 +278,59 @@ static void *updateValue(
  */
 static void *updateValueProxy(void *args)
 {
-    ThreadArgs *threadArgs = (ThreadArgs*) args;
+    const ThreadArgs * const threadArgs = (ThreadArgs*) args;
 
-    return updateValue(
+    void *res = updateValue(
         threadArgs->values,
         threadArgs->row,
         threadArgs->col,
         threadArgs->precision,
         threadArgs->threadAvailableFlag,
         threadArgs->threadAvailableFlagLock,
-        threadArgs->valuesSolvedPoint,
-        threadArgs->wereValuesModified
+        threadArgs->valuesSolvedArray,
+        threadArgs->valuesSolvedArrayDimension
     );
+
+    free(args);
+
+    return res;
 }
 
 /**
- * Solve the given values array and update it to the solution. Replaces each
- * point with the average of its four neighbours and repeats until the point
- * changes by less than the given precision. Does this until all points satisfy
- * this criteria. Uses a given number of threads to solve the problem in
- * parallel.
- * This is given an array of flags that signify whether a thread is available
- * or not. The id of the thread to spawn will be the index of the first flag in
- * this array that is 'available' (i.e. is 1). Also given an array of locks
- * that correspond to these flags, as they are updated both here and in other
- * threads.
+ * Check if the solution is 'solved'. That is, the valuesSolved array does not
+ * contain a '0' flag (which represents an unsolved value)
  *
- * @param values    The two dimensional values array to solve and update to the
- *                  solution
- * @param dimension The dimension of the two dimensional values array
- * @param threads   The number of threads to use when solving the problem (note
- *                  this is an upper bound)
- * @param precision The precision to work to (stop updating values when they
- *                  change by less than the precision)
- * @param threadsAvailable      Array of flags to signify whether a thread is
- *                              available to be spawned or not
- * @param threadsAvailableLocks Array of locks on flags in threadsAvailable
- * @param tIds                  Array of threads to update in order to keep
- *                              track of all the threads we spawn
+ * @param  valuesSolvedArray Two dimensional array of flags that signal which
+ *                           values have been solved
+ * @param  dimension         The dimension of valuesSolvedArray
+ *
+ * @return                   1 if valuesSolvedArray does not contain 0 (i.e
+ *                           solution is 'solved'), 0 otherwise
  */
-static void solveValues(
-    double ** const values,
-    const int dimension,
-    const int threads,
-    const double precision,
-    int * const threadsAvailable,
-    pthread_mutex_t * const threadsAvailableLocks,
-    pthread_t * const tIds
-)
+static int isSolved(int ** const valuesSolvedArray, const int dimension)
 {
-    int tId;
+    return !twoDIntArrayContains(0, valuesSolvedArray, dimension);
+}
 
-    // start at (1, 1) as edges are fixed.
-    int row = 1;
-    int col = 1;
-    // start with 'E' points
-    int oddPointsFlag = 0;
-
-    int wereValuesModified;
-
-    // Create array to flag which values have been solved ...
-    int ** const valuesSolvedArray = createTwoDIntArray(dimension);
-    // and initially set it
-    resetSolvedArray(valuesSolvedArray, dimension);
-
-    // Iterate until no points are marked as 'unsolved'
-    while (twoDIntArrayContains(0, valuesSolvedArray, dimension)) {
-        wereValuesModified = 0;
-
-        /**
-         * Find index (ID) of next available thread to spawn
-         *  Note: Acceptable race condition here:
-         *  -------------------------------------
-         *      If a thread is updating it's own ID in availableThreads to
-         *      1 ('available'), this will miss this as it does not acquire the
-         *      lock. However, this is by design. This will simply loop and try
-         *      again rather than have the overhead of acquiring the lock.
-         */
-        tId = intArraySearch(1, threadsAvailable, threads);
-
-        // If no threads available
-        if (tId == -1) {
-            // busy wait, may be CPU hungry but will be faster
-            continue;
-        }
-
-        // If value isn't already solved, spawn thread to update it
-        if (!valuesSolvedArray[row][col]) {
-            const ThreadArgs args = {
-                .values = values,
-                .row = row,
-                .col = col,
-                .precision = precision,
-                .threadAvailableFlag = &threadsAvailable[tId],
-                .threadAvailableFlagLock = &threadsAvailableLocks[tId],
-                .valuesSolvedPoint = &valuesSolvedArray[row][col],
-                .wereValuesModified = &wereValuesModified
-            };
-
-            pthread_mutex_lock(&threadsAvailableLocks[tId]);
-
-            // create the thread
-            pthread_create(&tIds[tId], NULL, updateValueProxy, (void *)&args);
-            // set lock to unavailable
-            threadsAvailable[tId] = 0;
-
-            pthread_mutex_unlock(&threadsAvailableLocks[tId]);
-        }
-
-        // This is a silly bug. It's parallel and this won't work.
-        // Needs to be done in the thread. Fix ASAP.
-        if (wereValuesModified) {
-            resetSolvedArray(valuesSolvedArray, dimension);
-        }
-
-        // If we are not at the last point in this 'pass'
-        if (!isLastEvenPoint(row, col, dimension)
-            && !isLastOddPoint(row, col, dimension)
-        ) {
-            moveToNext(&row, &col, dimension);
-
-            continue;
-        }
-
-        moveToNextPass(&oddPointsFlag, &row, &col);
-
-        // Wait for all live threads to finish before starting again, as we
-        // cannot do some 'E's and 'O's at the same time (see top of file
-        // comment for info on what an 'E' and an 'O' is)
-        for (int i = 0; i < threads; i++) {
-            // If thread is available, it's finished, so no need to wait
-            if (threadsAvailable[i]) {
-                continue;
-            }
-
-            pthread_join(tIds[i], NULL);
-        }
-    }
-
-    freeTwoDIntArray(valuesSolvedArray, dimension);
+/**
+ * Check if all threads have finished. If the threadsAvailable array contains a
+ * 0, then we know a thread is still running (as the last thing a thread does
+ * is update it's corresponding entry in this array to 1).
+ * All threads have finished if the given threadsAvailable array does not
+ * contain a 0.
+ *
+ * @param  threadsAvailable Array of flags singalling which threads are
+ *                          available
+ * @param  threads          Max number of threads, which is the dimension of
+ *                          the threadsAvailable array
+ *
+ * @return                  1 if threadsAvailable does not contain 0 (i.e all
+ *                          threads have finished), 0 otherwise
+ */
+static int allThreadsFinished(int * const threadsAvailable, const int threads)
+{
+    // intArraySearch returns -1 if it doesn't find given value
+    return intArraySearch(0, threadsAvailable, threads) == -1;
 }
 
 /**
@@ -424,10 +339,6 @@ static void solveValues(
  * changes by less than the given precision. Does this until all points satisfy
  * this criteria. Uses a given number of threads to solve the problem in
  * parallel.
- *
- * This function does some initial setup, calls solveValues function to
- * actually carry out the averaging and replacing, then waits for all spawned
- * threads to finish at the end to ensure we have the complete solution.
  *
  * @param values    The two dimensional values array to solve and update to the
  *                  solution
@@ -458,27 +369,95 @@ void solve(
 
     // Keep track of threads to join them later
     pthread_t tIds[threads];
+    int tId;
 
-    solveValues(
-        values,
-        dimension,
-        threads,
-        precision,
-        threadsAvailable,
-        threadsAvailableLocks,
-        tIds
-    );
+    // start at (1, 1) as edges are fixed.
+    int row = 1, col = 1;
 
-    // Make sure we wait for all remaining threads to finish
-    for (int i = 0; i < threads; i++) {
-        // Destroy all locks while we are here
-        pthread_mutex_destroy(&threadsAvailableLocks[i]);
+    // start with 'E' points
+    int oddPointsFlag = 0;
 
-        // If thread is available, it's finished, so no need to wait
-        if (threadsAvailable[i]) {
+    // Create array to flag which values have been solved ...
+    int ** const valuesSolvedArray = createTwoDIntArray(dimension);
+    // and initially set it
+    resetSolvedArray(valuesSolvedArray, dimension);
+
+    /**
+     *  Only terminate solution is solved and all threads have finished
+     *  Note it is important that these checks are in this order, as swapping
+     *  the order could lead to a race where the isSolved check passes, then a
+     *  thread resets the valuesSolved array and terminates, then the second
+     *  check passes even though we do not have the complete solution.
+     */
+    while (!(allThreadsFinished(threadsAvailable, threads)
+           && isSolved(valuesSolvedArray, dimension))
+    ) {
+        /**
+         * Find index (ID) of next available thread to spawn
+         *  Note: Acceptable race condition here:
+         *  -------------------------------------
+         *      If a thread is updating it's own ID in availableThreads to
+         *      1 ('available'), this will miss this as it does not acquire the
+         *      lock. However, this is a design choice. This will simply loop
+         *      and try again rather than have the overhead of acquiring the
+         *      lock.
+         */
+        tId = intArraySearch(1, threadsAvailable, threads);
+
+        // If no threads available
+        if (tId == -1) {
+            // busy wait, may be CPU hungry but will be faster
             continue;
         }
 
-        pthread_join(tIds[i], NULL);
+        // If value isn't already solved, spawn thread to update it
+        if (!valuesSolvedArray[row][col]) {
+            // Dynamically allocated as we need a fresh instance every time
+            // This is freed in the callback (updateValueProxy)
+            ThreadArgs * const args = malloc(sizeof(ThreadArgs));
+            args->values = values;
+            args->row = row;
+            args->col = col;
+            args->precision = precision;
+            args->threadAvailableFlag = &threadsAvailable[tId];
+            args->threadAvailableFlagLock = &threadsAvailableLocks[tId];
+            args->valuesSolvedArray = valuesSolvedArray;
+            args->valuesSolvedArrayDimension = dimension;
+
+            pthread_mutex_lock(&threadsAvailableLocks[tId]);
+
+            // create the thread
+            pthread_create(&tIds[tId], NULL, updateValueProxy, (void *)args);
+            // set lock to unavailable
+            threadsAvailable[tId] = 0;
+
+            pthread_mutex_unlock(&threadsAvailableLocks[tId]);
+        }
+
+        // If we are not at the last point in this 'pass'
+        if (!isLastEvenPoint(row, col, dimension)
+            && !isLastOddPoint(row, col, dimension)
+        ) {
+            moveToNext(&row, &col, dimension);
+
+            continue;
+        }
+
+        // Here we must be at the last point, so move to next pass
+        moveToNextPass(&oddPointsFlag, &row, &col);
+
+        // Wait for all live threads to finish before the next pass, as we
+        // cannot do some 'E's and 'O's at the same time (see top of file
+        // comment for info on what an 'E' and an 'O' is)
+        for (int i = 0; i < threads; i++) {
+            // If thread is available, it's finished, so no need to wait
+            if (threadsAvailable[i]) {
+                continue;
+            }
+
+            pthread_join(tIds[i], NULL);
+        }
     }
+
+    freeTwoDIntArray(valuesSolvedArray, dimension);
 }
