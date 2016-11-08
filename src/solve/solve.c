@@ -428,7 +428,10 @@ void solve(
 
             // create the thread
             pthread_create(&tIds[tId], NULL, updateValueProxy, (void *)args);
-            // set lock to unavailable
+            // detach so that memory is reallocated when thread terminates
+            pthread_detach(tIds[tId]);
+
+            // set thread to unavailable
             threadsAvailable[tId] = 0;
 
             pthread_mutex_unlock(&threadsAvailableLocks[tId]);
