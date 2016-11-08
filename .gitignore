@@ -1,3 +1,5 @@
 bin/solve
 bin/solve.dSYM/
 output.txt
+solve.batch
+time.txt
