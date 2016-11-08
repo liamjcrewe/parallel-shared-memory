@@ -30,7 +30,7 @@
  *
  * @return      1 if true (help flag specified), 0 otherwise
  */
-const int isHelpFlag(int args, char *argv[])
+static const int isHelpFlag(int args, char *argv[])
 {
     for (int i = 0; i < args; i++) {
         if (strcmp(argv[i], "--help") == 0
@@ -53,7 +53,11 @@ const int isHelpFlag(int args, char *argv[])
  *
  * @return           0 if success, -1 if error
  */
-int runSolve(const int problemId, const int threads, const double precision)
+static int runSolve(
+    const int problemId,
+    const int threads,
+    const double precision
+)
 {
     const int dimension = getProblemDimension(problemId);
 
