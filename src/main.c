@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "debug/debug.h"
+#include "output/output.h"
 #include "array/array.h"
 #include "problem/problem.h"
 #include "solve/solve.h"
@@ -30,7 +30,7 @@
  *
  * @return      1 if true (help flag specified), 0 otherwise
  */
-const int isHelpFlag(int args, char *argv[])
+static const int isHelpFlag(int args, char *argv[])
 {
     for (int i = 0; i < args; i++) {
         if (strcmp(argv[i], "--help") == 0
@@ -53,7 +53,11 @@ const int isHelpFlag(int args, char *argv[])
  *
  * @return           0 if success, -1 if error
  */
-int runSolve(const int problemId, const int threads, const double precision)
+static int runSolve(
+    const int problemId,
+    const int threads,
+    const double precision
+)
 {
     const int dimension = getProblemDimension(problemId);
 
@@ -66,16 +70,20 @@ int runSolve(const int problemId, const int threads, const double precision)
         return -1;
     }
 
+    FILE * const f = fopen("./output.txt", "w");
+
     // Log input
-    printf("Input:\n");
-    print2dDoubleArray(values, dimension);
+    fprintf(f, "Input:\n");
+    write2dDoubleArray(f, values, dimension);
 
     // Solve and update values
     solve(values, dimension, threads, precision);
 
     // Log solution
-    printf("\nSolution:\n");
-    print2dDoubleArray(values, dimension);
+    fprintf(f, "Solution:\n");
+    write2dDoubleArray(f, values, dimension);
+
+    fclose(f);
 
     // Free memory
     freeTwoDDoubleArray(values, dimension);
