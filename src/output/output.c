@@ -1,10 +1,11 @@
 #include <stdio.h>
 
 /**
- * Print a two dimensional array of doubles to the screen.
+ * Write a two dimensional array of doubles to a given file
  *
- * @param array     The array to print
- * @param dimension The dimension of the array to print
+ * @param f         File handle to write to
+ * @param array     Two dimensional array of doubles to write to file
+ * @param dimension Dimension of array
  */
 void write2dDoubleArray(
     FILE * const f,
