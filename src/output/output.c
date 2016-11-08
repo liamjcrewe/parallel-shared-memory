@@ -6,12 +6,16 @@
  * @param array     The array to print
  * @param dimension The dimension of the array to print
  */
-void print2dDoubleArray(double ** const array, const int dimension)
+void write2dDoubleArray(
+    FILE * const f,
+    double ** const array,
+    const int dimension
+)
 {
     for (int row = 0; row < dimension; ++row) {
         for (int col = 0; col < dimension; ++col) {
-            printf("%10f ", array[row][col]);
+            fprintf(f, "%10f ", array[row][col]);
         }
-        puts("");
+        fputs("\n", f);
     }
 }
