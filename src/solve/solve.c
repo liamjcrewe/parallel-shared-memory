@@ -259,7 +259,16 @@ static void *updateValue(
 
     values[row][col] = newValue;
 
-    // We've changed a value so must assume all values are unsolved and recheck
+    /**
+     *  We've changed a value so must assume all values are unsolved and
+     *  recheck
+     *
+     *  May result in a race if another thread is trying to set it's
+     *  corresponding flag to 1 (solved). In the worst case this thread will
+     *  overwrite the other thread's write. This will simply result in one
+     *  extra call of this function, so is not worth the overhead of adding
+     *  locks.
+     */
     resetSolvedArray(valuesSolvedArray, valuesSolvedArrayDimension);
 
     return endThread(threadAvailableFlag, threadAvailableFlagLock);
@@ -394,13 +403,12 @@ void solve(
     ) {
         /**
          * Find index (ID) of next available thread to spawn
-         *  Note: Acceptable race condition here:
-         *  -------------------------------------
-         *      If a thread is updating it's own ID in availableThreads to
-         *      1 ('available'), this will miss this as it does not acquire the
-         *      lock. However, this is a design choice. This will simply loop
-         *      and try again rather than have the overhead of acquiring the
-         *      lock.
+         *
+         * If a thread is updating it's own ID in availableThreads to
+         * 1 ('available'), this will miss this as it does not acquire the
+         * lock. However, this is a design choice. This will simply loop
+         * and try again rather than have the overhead of acquiring the
+         * lock.
          */
         tId = intArraySearch(1, threadsAvailable, threads);
 
