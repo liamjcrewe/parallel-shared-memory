@@ -8,7 +8,7 @@
 #include "solve/solve.h"
 
 #define HELP "Argument order:\n"\
-             " - Problem ID (1, 2, 3, 4 or 5. See src/problem/problem.c).\n"\
+             " - Problem ID (1, 2, 3, 4, 5 or 6. See src/problem/problem.c).\n"\
              " - Number of threads to use.\n"\
              " - Precision to work to.\n"
 
@@ -16,7 +16,7 @@
                          "number of threads and precision.\n"
 
 #define INVALID_PROBLEM_ID "Invalid problem id given. "\
-                           "Must be 1, 2, 3, 4 or 5.\n"
+                           "Must be 1, 2, 3, 4, 5 or 6.\n"
 
 #define INVALID_THREADS "Threads must be an integer greater than 0\n"
 
