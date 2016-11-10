@@ -10,4 +10,6 @@
 #SBATCH --time=00:00:30
 
 # Run the program
-time (bin/solve <PROBLEM_ID> <NUM_THREADS> <PRECISION>) 2>> time.txt
+CMD="bin/solve <PROBLEM_ID> <NUM_THREADS> <PRECISION>"
+echo $CMD >> time.txt
+time (eval $CMD) 2>> time.txt
