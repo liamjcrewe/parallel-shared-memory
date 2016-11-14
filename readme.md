@@ -20,5 +20,7 @@ Run ```bin/solve [problemId] [threads] [precision]```. There are six pre-defined
 * Problem 5: 40 x 40
 * Problem 6: 200 x 200
 
+After running, both the input and the solution are written to output.txt.
+
 ### Help
 Run ```bin/solve [--help|-h]``` for help.
