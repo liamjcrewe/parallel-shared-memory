@@ -460,13 +460,8 @@ void solve(
         // Wait for all live threads to finish before the next pass, as we
         // cannot do some 'E's and 'O's at the same time (see top of file
         // comment for info on what an 'E' and an 'O' is)
-        for (int i = 0; i < threads; i++) {
-            // If thread is available, it's finished, so no need to wait
-            if (threadsAvailable[i]) {
-                continue;
-            }
-
-            pthread_join(tIds[i], NULL);
+        while (!allThreadsFinished(threadsAvailable, threads)) {
+            continue;
         }
     }
 
