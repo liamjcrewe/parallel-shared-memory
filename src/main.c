@@ -22,6 +22,8 @@
 
 #define INVALID_PRECISION "Precision must be a decimal greater than 0\n"
 
+#define PTHREAD_ERROR "Something went wrong. Error code: %d\n"
+
 /**
  * Checks if any of the parameters passed via CLI are --help or -h
  *
@@ -77,7 +79,11 @@ static int runSolve(
     write2dDoubleArray(f, values, dimension);
 
     // Solve and update values
-    solve(values, dimension, threads, precision);
+    int error = solve(values, dimension, threads, precision);
+
+    if (error) {
+        printf(PTHREAD_ERROR, error);
+    }
 
     // Log solution
     fprintf(f, "Solution:\n");
@@ -88,7 +94,7 @@ static int runSolve(
     // Free memory
     freeTwoDDoubleArray(values, dimension);
 
-    return 0;
+    return error ? error : 0;
 }
 
 /**

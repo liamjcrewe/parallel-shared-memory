@@ -67,8 +67,10 @@ typedef struct {
  * @param valuesSolvedArray The two dimensional array to set to the above style
  * @param dimension   The dimension of the two dimensional array given
  */
-static void resetSolvedArray(int ** const valuesSolvedArray, const int dimension)
-{
+static void resetSolvedArray(
+    int ** const valuesSolvedArray,
+    const int dimension
+) {
     for(int row = 0; row < dimension; row++) {
         for(int col = 0; col < dimension; col++) {
             if (row == 0 || row == dimension - 1
@@ -204,9 +206,23 @@ static void *endThread(
     pthread_mutex_t * const threadAvailableFlagLock
 )
 {
-    pthread_mutex_lock(threadAvailableFlagLock);
+    int error;
+
+    error = pthread_mutex_lock(threadAvailableFlagLock);
+
+    if (error) {
+        printf("Something went wrong in thread. Error code: %d\n", error);
+        exit(error);
+    }
+
     *threadAvailableFlag = 1;
-    pthread_mutex_unlock(threadAvailableFlagLock);
+
+    error = pthread_mutex_unlock(threadAvailableFlagLock);
+
+    if (error) {
+        printf("Something went wrong in thread. Error code: %d\n", error);
+        exit(error);
+    }
 
     return NULL;
 }
@@ -357,7 +373,7 @@ static int allThreadsFinished(int * const threadsAvailable, const int threads)
  * @param precision The precision to work to (stop updating values when they
  *                  change by less than the precision)
  */
-void solve(
+int solve(
     double ** const values,
     const int dimension,
     const int threads,
@@ -370,10 +386,17 @@ void solve(
         threadsAvailable[i] = 1;
     }
 
+    // To check return codes of pthread functions
+    int error;
+
     // Array of locks on available threads
     pthread_mutex_t threadsAvailableLocks[threads];
     for (int i = 0; i < threads; i++) {
-        pthread_mutex_init(&threadsAvailableLocks[i], NULL);
+        error = pthread_mutex_init(&threadsAvailableLocks[i], NULL);
+
+        if (error) {
+            return error;
+        }
     }
 
     // Keep track of threads to join them later
@@ -432,17 +455,44 @@ void solve(
             args->valuesSolvedArray = valuesSolvedArray;
             args->valuesSolvedArrayDimension = dimension;
 
-            pthread_mutex_lock(&threadsAvailableLocks[tId]);
+            error = pthread_mutex_lock(&threadsAvailableLocks[tId]);
+
+            if (error) {
+                return error;
+            }
 
             // create the thread
-            pthread_create(&tIds[tId], NULL, updateValueProxy, (void *)args);
-            // detach so that memory is reallocated when thread terminates
-            pthread_detach(tIds[tId]);
+            error = pthread_create(
+                &tIds[tId],
+                NULL,
+                updateValueProxy,
+                (void *)args
+            );
+
+            if (error) {
+                return error;
+            }
+
+            /**
+             * Detach so that memory is automatically reallocated when thread
+             * terminates.
+             * We do not need to join threads as we have the threadsAvailable
+             * array to tell us when all threads are finished.
+             */
+            error = pthread_detach(tIds[tId]);
+
+            if (error) {
+                return error;
+            }
 
             // set thread to unavailable
             threadsAvailable[tId] = 0;
 
-            pthread_mutex_unlock(&threadsAvailableLocks[tId]);
+            error = pthread_mutex_unlock(&threadsAvailableLocks[tId]);
+
+            if (error) {
+                return error;
+            }
         }
 
         // If we are not at the last point in this 'pass'
@@ -466,4 +516,6 @@ void solve(
     }
 
     freeTwoDIntArray(valuesSolvedArray, dimension);
+
+    return 0;
 }
