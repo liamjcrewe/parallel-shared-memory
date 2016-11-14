@@ -13,7 +13,7 @@
  * @param precision The precision to work to (stop updating values when they
  *                  change by less than the precision)
  */
-void solve(
+int solve(
     double ** const values,
     const int dimension,
     const int threads,
