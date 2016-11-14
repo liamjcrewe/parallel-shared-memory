@@ -372,6 +372,8 @@ static int allThreadsFinished(int * const threadsAvailable, const int threads)
  *                  this is an upper bound)
  * @param precision The precision to work to (stop updating values when they
  *                  change by less than the precision)
+ *
+ * @return          0 on success, or an error code otherwise
  */
 int solve(
     double ** const values,
